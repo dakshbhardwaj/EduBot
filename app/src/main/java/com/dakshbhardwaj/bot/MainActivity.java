@@ -1,16 +1,21 @@
 package com.dakshbhardwaj.bot;
 
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.support.v4.app.ActivityCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
@@ -20,6 +25,7 @@ import android.widget.RelativeLayout;
 
 
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
@@ -38,6 +44,7 @@ import ai.api.model.Result;
 import com.google.gson.JsonElement;
 import java.util.Map;
 
+import android.Manifest;
 public class MainActivity extends AppCompatActivity implements AIListener {
 
     RecyclerView recyclerView;
@@ -46,6 +53,7 @@ public class MainActivity extends AppCompatActivity implements AIListener {
     DatabaseReference ref;
     FirebaseRecyclerAdapter<ChatMessage, chat_rec> adapter;
     Boolean flagFab = true;
+    private FirebaseAuth firebaseAuth;
 
     private AIService aiService;
 
@@ -54,7 +62,7 @@ public class MainActivity extends AppCompatActivity implements AIListener {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-//        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, 1);
+ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, 1);
 
 
         recyclerView = (RecyclerView) findViewById(R.id.recyclerView);
@@ -70,7 +78,7 @@ public class MainActivity extends AppCompatActivity implements AIListener {
         ref.keepSynced(true);
 
 
-        final AIConfiguration config = new AIConfiguration("983af7e6789d42479148ac044a43fb32",
+        final AIConfiguration config = new AIConfiguration("9c7331f6c08a412aa8d275af28e5ae86",
                 AIConfiguration.SupportedLanguages.English,
                 AIConfiguration.RecognitionEngine.System);
 
@@ -140,20 +148,14 @@ public class MainActivity extends AppCompatActivity implements AIListener {
                 Bitmap img = BitmapFactory.decodeResource(getResources(), R.drawable.ic_send_white_24dp);
                 Bitmap img1 = BitmapFactory.decodeResource(getResources(), R.drawable.ic_mic_white_24dp);
 
-
                 if (s.toString().trim().length() != 0 && flagFab) {
                     ImageViewAnimatedChange(MainActivity.this, fab_img, img);
                     flagFab = false;
-
                 } else if (s.toString().trim().length() == 0) {
                     ImageViewAnimatedChange(MainActivity.this, fab_img, img1);
                     flagFab = true;
-
                 }
-
-
             }
-
             @Override
             public void afterTextChanged(Editable s) {
 
@@ -165,21 +167,16 @@ public class MainActivity extends AppCompatActivity implements AIListener {
             protected void populateViewHolder(chat_rec viewHolder, ChatMessage model, int position) {
 
                 if (model.getMsgUser().equals("user")) {
-
-
                     viewHolder.rightText.setText(model.getMsgText());
-
                     viewHolder.rightText.setVisibility(View.VISIBLE);
                     viewHolder.leftText.setVisibility(View.GONE);
                 } else {
                     viewHolder.leftText.setText(model.getMsgText());
-
                     viewHolder.rightText.setVisibility(View.GONE);
                     viewHolder.leftText.setVisibility(View.VISIBLE);
                 }
             }
         };
-
         adapter.registerAdapterDataObserver(new RecyclerView.AdapterDataObserver() {
             @Override
             public void onItemRangeInserted(int positionStart, int itemCount) {
@@ -199,8 +196,6 @@ public class MainActivity extends AppCompatActivity implements AIListener {
         });
 
         recyclerView.setAdapter(adapter);
-
-
     }
 
     public void ImageViewAnimatedChange(Context c, final ImageView v, final Bitmap new_image) {
@@ -208,33 +203,93 @@ public class MainActivity extends AppCompatActivity implements AIListener {
         final Animation anim_in = AnimationUtils.loadAnimation(c, R.anim.zoom_in);
         anim_out.setAnimationListener(new Animation.AnimationListener() {
             @Override
-            public void onAnimationStart(Animation animation) {
-            }
-
+            public void onAnimationStart(Animation animation) {}
             @Override
-            public void onAnimationRepeat(Animation animation) {
-            }
-
+            public void onAnimationRepeat(Animation animation) { }
             @Override
             public void onAnimationEnd(Animation animation) {
                 v.setImageBitmap(new_image);
                 anim_in.setAnimationListener(new Animation.AnimationListener() {
                     @Override
-                    public void onAnimationStart(Animation animation) {
-                    }
-
+                    public void onAnimationStart(Animation animation) { }
                     @Override
-                    public void onAnimationRepeat(Animation animation) {
-                    }
-
+                    public void onAnimationRepeat(Animation animation) { }
                     @Override
-                    public void onAnimationEnd(Animation animation) {
-                    }
+                    public void onAnimationEnd(Animation animation) {   }
                 });
                 v.startAnimation(anim_in);
             }
         });
         v.startAnimation(anim_out);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu){
+
+        getMenuInflater().inflate(R.menu.menu,menu);
+        return super.onCreateOptionsMenu(menu);
+
+
+    }
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item){
+
+        switch (item.getItemId()){
+
+            case R.id.sign_out:
+                firebaseAuth=FirebaseAuth.getInstance();
+                firebaseAuth.signOut();
+                //closing activity
+                finish();
+                //starting login activity
+                startActivity(new Intent(this, LoginActivity.class));
+
+            case R.id.about_us:
+                AlertDialog.Builder dialog = new AlertDialog.Builder(MainActivity.this);
+                dialog.setCancelable(false);
+                dialog.setTitle("About us");
+                dialog.setMessage("Edu-Bot is an Android Application which provides answer to the query of students. Students can enter their queries in natural language either in" +
+                        " text format or with voice-to-text feature provided." +
+                        " \n \n" + "Daksh(151276)\n" + "Devansh Srivastava (151281)\n" + "Siddhant Mudgal(151412)");
+                dialog.setPositiveButton("Ok Got it!!", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int id) {
+                    }
+                })
+                        .setNegativeButton(" ", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                            }
+                        });
+
+                final AlertDialog alert = dialog.create();
+                alert.show();
+                return true;
+            case R.id.contact_us:
+                AlertDialog.Builder dialogs = new AlertDialog.Builder(MainActivity.this);
+                dialogs.setCancelable(false);
+                dialogs.setTitle("Contact us");
+                dialogs.setMessage("Daksh -" +"dakshbhardwaj2@gmail.com "+
+                        "Devansh -"+ "devanshsri1998@gmail.com " +
+                            "Siddhant -" + "sidmudgal21@gmail.com ");
+                dialogs.setPositiveButton("Ok Got it!!", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int id) {
+                    }
+                })
+                        .setNegativeButton(" ", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                            }
+                        });
+
+                final AlertDialog alerts = dialogs.create();
+                alerts.show();
+                return true;
+
+
+        }
+        return super.onOptionsItemSelected(item);
     }
 
 
@@ -254,7 +309,6 @@ public class MainActivity extends AppCompatActivity implements AIListener {
         ChatMessage chatMessage = new ChatMessage(reply, "bot");
         ref.child("chat").push().setValue(chatMessage);
 
-
     }
 
     @Override
@@ -273,6 +327,5 @@ public class MainActivity extends AppCompatActivity implements AIListener {
 
     @Override
     public void onListeningFinished() {}
-
 
 }
